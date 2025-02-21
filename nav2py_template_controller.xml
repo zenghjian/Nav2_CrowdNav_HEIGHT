@@ -1,0 +1,9 @@
+<class_libraries>
+    <library path="nav2py_template_controller">
+        <class type="nav2py_template_controller::TemplateController" base_class_type="nav2_core::Controller">
+            <description>
+                Template for nav2py controllers.
+            </description>
+        </class>
+    </library>
+</class_libraries>
