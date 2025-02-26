@@ -29,7 +29,7 @@ class nav2py_template_controller(nav2py.interfaces.nav2py_costmap_controller):
             
             # Set model paths 
             vae_path = "/home/zeng/nav_ws/src/nav2py_template_controller/nav2py_template_controller/nav2py_template_controller/PaS_CrowdNav/data/LabelVAE_CircleFOV30/label_vae_ckpt/label_vae_weight_300.pth"
-            policy_path = "/home/zeng/nav_ws/src/nav2py_template_controller/nav2py_template_controller/nav2py_template_controller/PaS_CrowdNav/data/pas_rnn/checkpoints/33200.pt"
+            policy_path = "/home/zeng/nav_ws/src/nav2py_template_controller/nav2py_template_controller/nav2py_template_controller/PaS_CrowdNav/data/pas_rnn/checkpoints/unicycle_41665.pt"
             
             # Check if model files exist
             if not os.path.exists(vae_path) or not os.path.exists(policy_path):

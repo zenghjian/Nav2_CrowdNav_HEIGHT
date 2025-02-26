@@ -68,12 +68,6 @@ class PaSController:
         vae_state_dict = torch.load(vae_path, map_location=self.device)
         policy_state_dict = torch.load(policy_path, map_location=self.device)
         
-        # Print key shapes from state dictionaries for debugging
-        self.logger.info("VAE state dict keys:")
-        for key, value in vae_state_dict.items():
-            if isinstance(value, torch.Tensor):
-                self.logger.info(f"  {key}: {value.shape}")
-        
         # Try to infer model parameters from the state dict
         class Args:
             def __init__(self):
@@ -200,8 +194,11 @@ class PaSController:
         if costmap.size == 0:
             self.logger.error("Error: Empty costmap received")
             return None, None
-            
+                
         self.logger.info(f"Processing costmap of shape {costmap.shape}, resolution: {resolution}")
+        
+        # Print costmap
+        self.log_costmap(costmap, self.logger, "Original Costmap")
         
         # Update costmap sequence
         self.update_sequence(costmap)
@@ -223,7 +220,7 @@ class PaSController:
             # If model not loaded, return None to use the fallback
             self.logger.warn("Model not loaded, returning None to use fallback")
             return None, None
-    
+        
     def prepare_robot_state(self, pose):
         """
         Prepare robot state vector from pose
@@ -402,3 +399,70 @@ class PaSController:
                 self.logger.error(f"Error in predict_control: {e}")
                 self.logger.error(traceback.format_exc())
                 return None, None
+            
+    def log_costmap(self, costmap, logger, title="Costmap", threshold=0.5, max_size=20):
+        """
+        Print costmap in ASCII format to the logger
+        
+        Args:
+            costmap: The costmap array to print
+            logger: Logger object
+            title: Title for the visualization
+            threshold: Binarization threshold
+            max_size: Maximum size to print (costmap will be downsampled if larger)
+        """
+        height, width = costmap.shape
+        
+        # Downsample if costmap is too large
+        if height > max_size or width > max_size:
+            h_step = max(1, height // max_size)
+            w_step = max(1, width // max_size)
+            sampled_height = height // h_step
+            sampled_width = width // w_step
+            
+            # Create downsampled costmap
+            sampled_costmap = np.zeros((sampled_height, sampled_width))
+            for i in range(sampled_height):
+                for j in range(sampled_width):
+                    # Use average as the downsampled value
+                    sampled_costmap[i, j] = np.mean(
+                        costmap[i*h_step:min((i+1)*h_step, height), 
+                            j*w_step:min((j+1)*w_step, width)]
+                    )
+            
+            costmap = sampled_costmap
+            height, width = costmap.shape
+        
+        # Print title and dimension info
+        logger.info(f"\n{title} ({height}x{width}):")
+        
+        # Create visualization using characters for different values
+        map_str = ""
+        
+        # Find robot position (usually the center of costmap)
+        robot_y, robot_x = height // 2, width // 2
+        
+        # Create character representation for costmap values
+        for i in range(height):
+            row_str = ""
+            for j in range(width):
+                # If robot position
+                if i == robot_y and j == robot_x:
+                    row_str += "R "  # 'R' represents robot
+                # If obstacle (based on threshold)
+                elif costmap[i, j] > threshold:
+                    val = int(min(9, costmap[i, j] * 9))  # Scale value to 0-9
+                    row_str += f"{val} "  # Number represents obstacle intensity
+                # If unknown area (medium value)
+                elif costmap[i, j] > 0.2:
+                    row_str += "· "  # Dot represents medium probability
+                # If free space
+                else:
+                    row_str += "  "  # Space represents free space
+            map_str += row_str + "\n"
+        
+        # Print the map
+        logger.info(f"\n{map_str}")
+        
+        # Print legend
+        logger.info("Legend: R=robot position, numbers(1-9)=obstacle intensity, ·=medium probability, space=free space")
