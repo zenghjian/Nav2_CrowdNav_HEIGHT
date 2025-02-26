@@ -47,6 +47,27 @@ void TemplateController::configure(
     " --port 0");
 
   global_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
+
+  scan_sub_ = node->create_subscription<sensor_msgs::msg::LaserScan>(
+    "scan", rclcpp::QoS(10),  
+    std::bind(&TemplateController::scanCallback, this, std::placeholders::_1));
+}
+
+void TemplateController::scanCallback(const std::shared_ptr<sensor_msgs::msg::LaserScan> msg)
+{
+  std::stringstream ss;
+  std::vector<float> ranges(msg->ranges.begin(), msg->ranges.end());
+  ss << "angle_min: " << msg->angle_min << "\n";
+  ss << "angle_max: " << msg->angle_max << "\n";
+  ss << "angle_increment: " << msg->angle_increment << "\n";
+  ss << "ranges: [";
+  for (size_t i = 0; i < ranges.size(); ++i) {
+    ss << ranges[i];
+    if (i < ranges.size() - 1) ss << ", ";
+  }
+  ss << "]\n";
+
+  nav2py_send("scan_data", {ss.str()});
 }
 
 void TemplateController::cleanup()
@@ -92,7 +113,6 @@ geometry_msgs::msg::TwistStamped TemplateController::computeVelocityCommands(
   (void)goal_checker;
 
   auto transformed_plan = transformGlobalPlan(pose);
-
   nav2py_send("path", {nav_msgs::msg::to_yaml(transformed_plan, true)});
 
   // Create and publish a TwistStamped message with the desired velocity

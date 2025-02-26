@@ -3,7 +3,4 @@ name = "nav2py_template_controller"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = "==3.8.*"
-dependencies = [
-    "pyyaml",
-]
+requires-python = "==3.10"

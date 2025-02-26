@@ -22,6 +22,8 @@
   <depend>pluginlib</depend>
   <depend>tf2</depend>
   <depend>ament_index_cpp</depend>
+  <!-- Scan -->
+  <depend>sensor_msgs</depend>
 
   <exec_depend>nav2_bringup</exec_depend>
 

@@ -16,6 +16,11 @@ find_package(nav2_core REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2py REQUIRED)
+
+find_package(sensor_msgs REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(image_transport REQUIRED)
+
 find_package(ament_index_cpp REQUIRED)
 
 find_package(ament_cmake_venv REQUIRED)
@@ -39,6 +44,7 @@ set(dependencies
   nav2_util
   nav2py
   ament_index_cpp
+  sensor_msgs   
 )
 
 add_library(nav2py_template_controller SHARED
