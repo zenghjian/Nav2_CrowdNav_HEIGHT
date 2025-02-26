@@ -68,11 +68,9 @@ protected:
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_pub_;
   
-  // Add the following members
+  void sendCostmapAndPose(const geometry_msgs::msg::PoseStamped & pose);
+  
 
-  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan_sub_;
-  // Add callback functions
-  void scanCallback(const std::shared_ptr<sensor_msgs::msg::LaserScan> msg);
 };
 
 }  // namespace nav2py_template_controller
