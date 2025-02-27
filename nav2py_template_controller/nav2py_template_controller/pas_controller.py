@@ -8,6 +8,31 @@ from .PaS_CrowdNav.rl.model import Policy
 from .PaS_CrowdNav.rl.pas_rnn_model import Label_VAE
 from rclpy.logging import get_logger
 
+def set_log_level(logger, level='info'):
+    """
+    Set the logging level for a ROS2 logger
+    
+    Args:
+        logger: The ROS2 logger instance
+        level: The log level ('debug', 'info', 'warn', 'error', 'fatal')
+    """
+    from rclpy.logging import LoggingSeverity
+    
+    levels = {
+        'debug': LoggingSeverity.DEBUG,
+        'info': LoggingSeverity.INFO,
+        'warn': LoggingSeverity.WARN,
+        'error': LoggingSeverity.ERROR,
+        'fatal': LoggingSeverity.FATAL
+    }
+    
+    if level.lower() in levels:
+        logger.set_level(levels[level.lower()])
+        logger.info(f"Log level set to {level.upper()}")
+    else:
+        logger.warn(f"Unknown log level '{level}'. Using INFO level.")
+        logger.set_level(LoggingSeverity.INFO)
+
 class PaSController:
     """
     People as Sensors (PaS) controller, used to predict occluded areas and provide navigation decisions
@@ -22,8 +47,9 @@ class PaSController:
             device: Running device ('cpu' or 'cuda')
             config: Configuration object, if None, use default configuration
         """
-        # Setup logger
         self.logger = get_logger('pas_controller')
+        
+        set_log_level(self.logger, 'info')
         
         self.config = config if config is not None else Config()
         self.device = torch.device(device if torch.cuda.is_available() else "cpu")
@@ -63,12 +89,10 @@ class PaSController:
             vae_path: Path to VAE model file
             policy_path: Path to Policy model file
         """
-        # First load model state dictionaries to check parameter sizes
         self.logger.info(f"Loading model from {vae_path} and {policy_path}")
         vae_state_dict = torch.load(vae_path, map_location=self.device)
         policy_state_dict = torch.load(policy_path, map_location=self.device)
         
-        # Try to infer model parameters from the state dict
         class Args:
             def __init__(self):
                 self.rnn_output_size = 128  
@@ -80,11 +104,9 @@ class PaSController:
 
         args = Args()
         
-        # Create Label_VAE instance
         self.logger.info("Creating Label_VAE instance")
         self.vae_model = Label_VAE(args)
-
-        # Load state dict
+        
         try:
             self.vae_model.load_state_dict(vae_state_dict)
             self.logger.info("VAE state dict loaded successfully")
@@ -123,7 +145,70 @@ class PaSController:
         }
         
         self.logger.info("Model loading completed successfully")
+    
+    def prepare_robot_state(self, pose, current_velocity=None, goal_pose=None):
+        """
+        Prepare robot state vector for the network
         
+        Args:
+            pose: Robot pose dictionary 
+            current_velocity: Current robot velocity (optional)
+            goal_pose: Goal pose (relative position from path's last point)
+                
+        Returns:
+            tensor: Robot state vector formatted for the neural network
+        """
+        try:
+            qx = pose['robot_pose']['orientation']['x']
+            qy = pose['robot_pose']['orientation']['y']
+            qz = pose['robot_pose']['orientation']['z']
+            qw = pose['robot_pose']['orientation']['w']
+            
+            yaw = math.atan2(2.0 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy * qy + qz * qz))
+            
+            rel_x = 0.0
+            rel_y = 0.0
+            if goal_pose is not None:
+                rel_x = goal_pose.get('x', 0.0)
+                rel_y = goal_pose.get('y', 0.0)
+                self.logger.info(f"Using path endpoint as goal: x={rel_x:.2f}, y={rel_y:.2f}")
+            else:
+                self.logger.warn("No goal position available, using defaults (0,0)")
+                
+            v_x = 0.0
+            v_y = 0.0
+            v_linear = 0.0
+            v_angular = 0.0
+            
+            if current_velocity is not None:
+                v_linear = current_velocity.get('linear', 0.0)
+                v_angular = current_velocity.get('angular', 0.0)
+                
+                v_x = v_linear * math.cos(yaw)
+                v_y = v_linear * math.sin(yaw)
+            
+            self.logger.info(f"Robot velocities: linear={v_linear:.2f}, angular={v_angular:.2f}")
+            
+            if self.config.action_space.kinematics == 'holonomic':
+                robot_state = torch.tensor([[[rel_x, rel_y, v_x, v_y]]], dtype=torch.float32).to(self.device)
+                self.logger.info(f"Created holonomic robot state: [{rel_x:.2f}, {rel_y:.2f}, {v_x:.2f}, {v_y:.2f}]")
+            else:
+                #  [rel_x, rel_y, theta, v, w]
+                robot_state = torch.tensor([[[rel_x, rel_y, yaw, v_linear, v_angular]]], dtype=torch.float32).to(self.device)
+                self.logger.info(f"Created differential robot state: [{rel_x:.2f}, {rel_y:.2f}, {yaw:.2f}, {v_linear:.2f}, {v_angular:.2f}]")
+            
+            return robot_state
+            
+        except Exception as e:
+            import traceback
+            self.logger.error(f"Error in prepare_robot_state: {e}")
+            self.logger.error(traceback.format_exc())
+            
+            if self.config.action_space.kinematics == 'holonomic':
+                return torch.tensor([[[0.0, 0.0, 0.0, 0.0]]], dtype=torch.float32).to(self.device)
+            else:
+                return torch.tensor([[[0.0, 0.0, 0.0, 0.0, 0.0]]], dtype=torch.float32).to(self.device)
+    
     def update_sequence(self, costmap):
         """
         Update costmap sequence
@@ -176,17 +261,19 @@ class PaSController:
         
         return resized
     
-    def process_costmap(self, costmap, pose, resolution, origin_x, origin_y):
+    def process_costmap(self, costmap, pose, resolution, origin_x, origin_y, velocity=None, goal=None):
         """
         Process a costmap and robot pose, return control commands
         
         Args:
             costmap: Occupancy grid map (normalized to [0, 1])
-            pose: Robot pose dictionary (keys: x, y, z, qx, qy, qz, qw)
+            pose: Robot pose dictionary
             resolution: Costmap resolution (meters/cell)
             origin_x: Costmap origin X (meters)
             origin_y: Costmap origin Y (meters)
-            
+            velocity: Current robot velocity (optional)
+            goal: Goal position relative to robot frame (optional)
+                
         Returns:
             tuple: (linear_x, angular_z) linear velocity and angular velocity
         """
@@ -198,13 +285,17 @@ class PaSController:
         self.logger.info(f"Processing costmap of shape {costmap.shape}, resolution: {resolution}")
         
         # Print costmap
-        self.log_costmap(costmap, self.logger, "Original Costmap")
+        # self.log_costmap(costmap, self.logger, "Original Costmap")
         
         # Update costmap sequence
         self.update_sequence(costmap)
         
-        # Prepare robot state based on pose
-        robot_state = self.prepare_robot_state(pose)
+        # Log goal and pose information
+        if goal is not None:
+            self.logger.info(f"Goal pose (relative to robot): x={goal.get('x', 0.0):.2f}, y={goal.get('y', 0.0):.2f}")
+        
+        # Prepare robot state based on pose and goal
+        robot_state = self.prepare_robot_state(pose, velocity, goal)
         
         if self.model_loaded:
             # If model is loaded, use model for inference
@@ -220,42 +311,6 @@ class PaSController:
             # If model not loaded, return None to use the fallback
             self.logger.warn("Model not loaded, returning None to use fallback")
             return None, None
-        
-    def prepare_robot_state(self, pose):
-        """
-        Prepare robot state vector from pose
-        
-        Args:
-            pose: Robot pose dictionary
-            
-        Returns:
-            tensor: Robot state vector
-        """
-        # Extract position and orientation from pose
-        x = pose['x']
-        y = pose['y']
-        qx = pose['qx']
-        qy = pose['qy']
-        qz = pose['qz']
-        qw = pose['qw']
-        
-        # Convert quaternion to yaw 
-        yaw = math.atan2(2.0 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy * qy + qz * qz))
-        
-        self.logger.debug(f"Robot pose: x={x:.2f}, y={y:.2f}, yaw={yaw:.2f}")
-        
-        if self.config.action_space.kinematics == 'holonomic':
-            # For holonomic robot: [x, y, vx, vy]
-            # Assuming zero velocity for now (can be updated if velocity is provided)
-            robot_state = torch.tensor([[[x, y, 0.0, 0.0]]], dtype=torch.float32).to(self.device)
-            self.logger.debug("Created holonomic robot state")
-        else:
-            # For differential drive robot: [x, y, theta, v, w]
-            # Assuming zero velocity for now (can be updated if velocity is provided)
-            robot_state = torch.tensor([[[x, y, yaw, 0.0, 0.0]]], dtype=torch.float32).to(self.device)
-            self.logger.debug("Created differential robot state")
-        
-        return robot_state
     
     def predict_control(self, robot_state):
         """
@@ -269,7 +324,16 @@ class PaSController:
         """
         with torch.no_grad():
             try:
-                self.logger.info("Starting model prediction")
+                # Add prominent frame delimiter for prediction logs
+                frame_delimiter = "*" * 80
+                self.logger.info(f"\n{frame_delimiter}")
+                self.logger.info(f"***** STARTING MODEL PREDICTION *****")
+                self.logger.info(f"{frame_delimiter}")
+                
+                # Print robot state for debugging
+                robot_state_np = robot_state.cpu().numpy()
+                self.logger.info(f"Robot state shape: {robot_state.shape}")
+                self.logger.info(f"Robot state values: {robot_state_np}")
                 
                 # Prepare input
                 # Stack costmap sequence as a tensor
@@ -370,28 +434,17 @@ class PaSController:
                     angular_z = np.arctan2(v_action[1], v_action[0]) if linear_x > 0.01 else 0.0
                 
                 else:  # non-holonomic
-                    # Clip action (changes in v and w)
-                    clipped_v_change = np.clip(raw_action[0], -0.1, 0.1)
-                    clipped_w_change = np.clip(raw_action[1], -0.1, 0.1)
+                    linear_x = np.clip(raw_action[0], -0.1, 0.1)
+                    angular_z = np.clip(raw_action[1], -0.1, 0.1)
                     
-                    # If need to track current v and w
-                    if not hasattr(self, 'current_v'):
-                        self.current_v = 0.0
-                    if not hasattr(self, 'current_w'):
-                        self.current_w = 0.0
                     
-                    # Update v and w
-                    self.current_v += clipped_v_change
-                    self.current_w = clipped_w_change  # Directly set angular velocity instead of accumulating
-                    
-                    # Ensure velocity is within valid range
-                    self.current_v = np.clip(self.current_v, 0.0, v_pref)
-                    
-                    # Set output
-                    linear_x = self.current_v
-                    angular_z = self.current_w
-                
                 self.logger.info(f"Computed control: linear_x={linear_x:.2f}, angular_z={angular_z:.2f}")
+                
+                # At the end, add another delimiter
+                self.logger.info(f"\n{frame_delimiter}")
+                self.logger.info(f"***** MODEL PREDICTION COMPLETED *****")
+                self.logger.info(f"{frame_delimiter}")
+                
                 return linear_x, angular_z
                 
             except Exception as e:

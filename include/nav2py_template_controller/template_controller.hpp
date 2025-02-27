@@ -68,7 +68,9 @@ protected:
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_pub_;
   
-  void sendCostmapAndPose(const geometry_msgs::msg::PoseStamped & pose);
+  void sendCostmapAndPose(
+    const geometry_msgs::msg::PoseStamped & pose,
+    const geometry_msgs::msg::Twist & velocity = geometry_msgs::msg::Twist());
   
 
 };

@@ -63,83 +63,112 @@
      plugin_name_.c_str());
  }
  
- void TemplateController::sendCostmapAndPose(const geometry_msgs::msg::PoseStamped & pose)
- {
-   static int frame_count = 0;
-   frame_count++;
-   
-   // Get the costmap
-   nav2_costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
-   unsigned int width = costmap->getSizeInCellsX();
-   unsigned int height = costmap->getSizeInCellsY();
-   double resolution = costmap->getResolution();
-   double origin_x = costmap->getOriginX();
-   double origin_y = costmap->getOriginY();
-   
-   RCLCPP_INFO(
-     logger_,
-     "Sending costmap (frame %d): %dx%d, resolution: %.3f, origin: (%.2f, %.2f)",
-     frame_count, width, height, resolution, origin_x, origin_y);
-   
-   // Create a structured costmap data
-   std::stringstream ss;
-   ss << "costmap_info:\n";
-   ss << "  width: " << width << "\n";
-   ss << "  height: " << height << "\n";
-   ss << "  resolution: " << resolution << "\n";
-   ss << "  origin_x: " << origin_x << "\n";
-   ss << "  origin_y: " << origin_y << "\n";
-   
-   // Add costmap data - avoid including all cells for debug log to prevent overflow
-   RCLCPP_INFO(logger_, "Adding costmap data array of size %dx%d = %d cells", width, height, width * height);
-   
-   ss << "costmap_data: [";
-   for (unsigned int i = 0; i < height; ++i) {
-     for (unsigned int j = 0; j < width; ++j) {
-       unsigned char cost = costmap->getCost(j, i);
-       ss << static_cast<int>(cost);
-       if (i < height - 1 || j < width - 1) {
-         ss << ", ";
-       }
-       
-       // For debug: log a sample of the costs at the center
-       if (frame_count % 10 == 0 && 
-           i >= height/2-2 && i <= height/2+2 && 
-           j >= width/2-2 && j <= width/2+2) {
-         RCLCPP_DEBUG(
-           logger_,
-           "Costmap value at (%d, %d): %d", 
-           i, j, static_cast<int>(cost));
-       }
-     }
-   }
-   ss << "]\n";
-   
-   // Add robot pose
-   RCLCPP_INFO(
-     logger_,
-     "Robot pose: (%.2f, %.2f, %.2f)",
-     pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
-   
-   ss << "robot_pose:\n";
-   ss << "  position:\n";
-   ss << "    x: " << pose.pose.position.x << "\n";
-   ss << "    y: " << pose.pose.position.y << "\n";
-   ss << "    z: " << pose.pose.position.z << "\n";
-   ss << "  orientation:\n";
-   ss << "    x: " << pose.pose.orientation.x << "\n";
-   ss << "    y: " << pose.pose.orientation.y << "\n";
-   ss << "    z: " << pose.pose.orientation.z << "\n";
-   ss << "    w: " << pose.pose.orientation.w << "\n";
-   
-   // Generate timestamp
-   ss << "timestamp: " << clock_->now().nanoseconds() << "\n";
-   ss << "frame_id: " << frame_count << "\n";
-   
-   // Send the data
-   nav2py_send("costmap_pose", {ss.str()});
-   RCLCPP_INFO(logger_, "Sent costmap and pose data (frame %d) to Python controller", frame_count);
- }
+ void TemplateController::sendCostmapAndPose(
+  const geometry_msgs::msg::PoseStamped & pose,
+  const geometry_msgs::msg::Twist & velocity)
+{
+  static int frame_count = 0;
+  frame_count++;
+  
+  // Add prominent frame delimiter for logs
+  std::string frame_delimiter(80, '=');
+  RCLCPP_INFO(logger_, "\n%s", frame_delimiter.c_str());
+  RCLCPP_INFO(logger_, "===== SENDING FRAME %d =====", frame_count);
+  RCLCPP_INFO(logger_, "%s", frame_delimiter.c_str());
+  
+  // Get the costmap
+  nav2_costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
+  unsigned int width = costmap->getSizeInCellsX();
+  unsigned int height = costmap->getSizeInCellsY();
+  double resolution = costmap->getResolution();
+  double origin_x = costmap->getOriginX();
+  double origin_y = costmap->getOriginY();
+  
+  RCLCPP_INFO(
+    logger_,
+    "Sending costmap: %dx%d, resolution: %.3f, origin: (%.2f, %.2f)",
+    width, height, resolution, origin_x, origin_y);
+  
+  // Create a structured costmap data
+  std::stringstream ss;
+  ss << "costmap_info:\n";
+  ss << "  width: " << width << "\n";
+  ss << "  height: " << height << "\n";
+  ss << "  resolution: " << resolution << "\n";
+  ss << "  origin_x: " << origin_x << "\n";
+  ss << "  origin_y: " << origin_y << "\n";
+  
+  // Add costmap data - avoid including all cells for debug log to prevent overflow
+  RCLCPP_INFO(logger_, "Adding costmap data array of size %dx%d = %d cells", width, height, width * height);
+  
+  ss << "costmap_data: [";
+  for (unsigned int i = 0; i < height; ++i) {
+    for (unsigned int j = 0; j < width; ++j) {
+      unsigned char cost = costmap->getCost(j, i);
+      ss << static_cast<int>(cost);
+      if (i < height - 1 || j < width - 1) {
+        ss << ", ";
+      }
+      
+      // For debug: log a sample of the costs at the center
+      if (frame_count % 10 == 0 && 
+          i >= height/2-2 && i <= height/2+2 && 
+          j >= width/2-2 && j <= width/2+2) {
+        RCLCPP_DEBUG(
+          logger_,
+          "Costmap value at (%d, %d): %d", 
+          i, j, static_cast<int>(cost));
+      }
+    }
+  }
+  ss << "]\n";
+  
+  // Add robot pose
+  RCLCPP_INFO(
+    logger_,
+    "Robot pose: (%.2f, %.2f, %.2f)",
+    pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
+  
+  ss << "robot_pose:\n";
+  ss << "  position:\n";
+  ss << "    x: " << pose.pose.position.x << "\n";
+  ss << "    y: " << pose.pose.position.y << "\n";
+  ss << "    z: " << pose.pose.position.z << "\n";
+  ss << "  orientation:\n";
+  ss << "    x: " << pose.pose.orientation.x << "\n";
+  ss << "    y: " << pose.pose.orientation.y << "\n";
+  ss << "    z: " << pose.pose.orientation.z << "\n";
+  ss << "    w: " << pose.pose.orientation.w << "\n";
+  
+  // Add robot velocity
+  RCLCPP_INFO(
+    logger_,
+    "Robot velocity: linear=(%.2f, %.2f, %.2f), angular=(%.2f, %.2f, %.2f)",
+    velocity.linear.x, velocity.linear.y, velocity.linear.z,
+    velocity.angular.x, velocity.angular.y, velocity.angular.z);
+  
+  ss << "robot_velocity:\n";
+  ss << "  linear:\n";
+  ss << "    x: " << velocity.linear.x << "\n";
+  ss << "    y: " << velocity.linear.y << "\n";
+  ss << "    z: " << velocity.linear.z << "\n";
+  ss << "  angular:\n";
+  ss << "    x: " << velocity.angular.x << "\n";
+  ss << "    y: " << velocity.angular.y << "\n";
+  ss << "    z: " << velocity.angular.z << "\n";
+  
+  // Generate timestamp
+  ss << "timestamp: " << clock_->now().nanoseconds() << "\n";
+  ss << "frame_id: " << frame_count << "\n";
+  
+  // Send the data
+  nav2py_send("costmap_pose", {ss.str()});
+  
+  // Add closing delimiter
+  RCLCPP_INFO(logger_, "\n%s", frame_delimiter.c_str());
+  RCLCPP_INFO(logger_, "===== FRAME %d SENT =====", frame_count);
+  RCLCPP_INFO(logger_, "%s", frame_delimiter.c_str());
+}
  
  void TemplateController::cleanup()
  {
@@ -176,70 +205,57 @@
  }
  
  geometry_msgs::msg::TwistStamped TemplateController::computeVelocityCommands(
-   const geometry_msgs::msg::PoseStamped & pose,
-   const geometry_msgs::msg::Twist & velocity,
-   nav2_core::GoalChecker * goal_checker)
- {
-   (void)velocity;
-   (void)goal_checker;
- 
-   auto transformed_plan = transformGlobalPlan(pose);
-   
-   // Send path to the Python controller
-   try {
-     std::string path_yaml = nav_msgs::msg::to_yaml(transformed_plan, true);
-     
-     // Debug: Log first pose
-     if (!transformed_plan.poses.empty()) {
-       const auto& first_pose = transformed_plan.poses.front().pose;
-       RCLCPP_INFO(
-         logger_,
-         "First pose in path: (%.2f, %.2f)",
-         first_pose.position.x, first_pose.position.y);
-     }
-     
-     nav2py_send("path", {path_yaml});
-     RCLCPP_INFO(logger_, "Sent path data to Python controller");
-   } catch (const std::exception& e) {
-     RCLCPP_ERROR(
-       logger_,
-       "Error sending path to Python controller: %s", e.what());
-   }
-   
-   // Send costmap and robot pose data
-   try {
-     sendCostmapAndPose(pose);
-   } catch (const std::exception& e) {
-     RCLCPP_ERROR(
-       logger_,
-       "Error sending costmap and pose data: %s", e.what());
-   }
-   
-   // Create and publish a TwistStamped message with the desired velocity
-   geometry_msgs::msg::TwistStamped cmd_vel;
-   cmd_vel.header.frame_id = pose.header.frame_id;
-   cmd_vel.header.stamp = clock_->now();
-   
-   try {
-     RCLCPP_INFO(logger_, "Waiting for velocity command from Python controller...");
-     cmd_vel.twist = wait_for_cmd_vel();
-     
-     RCLCPP_INFO(
-       logger_, 
-       "Received velocity command: linear_x=%.2f, angular_z=%.2f", 
-       cmd_vel.twist.linear.x, cmd_vel.twist.angular.z);
-   } catch (const std::exception& e) {
-     RCLCPP_ERROR(
-       logger_,
-       "Error receiving velocity command: %s", e.what());
-     
-     // If command fails, send a zero velocity command
-     cmd_vel.twist.linear.x = 0.0;
-     cmd_vel.twist.angular.z = 0.0;
-   }
- 
-   return cmd_vel;
- }
+  const geometry_msgs::msg::PoseStamped & pose,
+  const geometry_msgs::msg::Twist & velocity,
+  nav2_core::GoalChecker * goal_checker)
+{
+
+  (void)goal_checker;
+
+  auto transformed_plan = transformGlobalPlan(pose);
+  
+  try {
+    std::string path_yaml = nav_msgs::msg::to_yaml(transformed_plan, true);
+    
+    nav2py_send("path", {path_yaml});
+    RCLCPP_INFO(logger_, "Sent path data to Python controller");
+  } catch (const std::exception& e) {
+    RCLCPP_ERROR(
+      logger_,
+      "Error sending path to Python controller: %s", e.what());
+  }
+  
+  try {
+    sendCostmapAndPose(pose, velocity);
+  } catch (const std::exception& e) {
+    RCLCPP_ERROR(
+      logger_,
+      "Error sending costmap and pose data: %s", e.what());
+  }
+  
+  geometry_msgs::msg::TwistStamped cmd_vel;
+  cmd_vel.header.frame_id = pose.header.frame_id;
+  cmd_vel.header.stamp = clock_->now();
+  
+  try {
+    RCLCPP_INFO(logger_, "Waiting for velocity command from Python controller...");
+    cmd_vel.twist = wait_for_cmd_vel();
+    
+    RCLCPP_INFO(
+      logger_, 
+      "Received velocity command: linear_x=%.2f, angular_z=%.2f", 
+      cmd_vel.twist.linear.x, cmd_vel.twist.angular.z);
+  } catch (const std::exception& e) {
+    RCLCPP_ERROR(
+      logger_,
+      "Error receiving velocity command: %s", e.what());
+    
+    cmd_vel.twist.linear.x = 0.0;
+    cmd_vel.twist.angular.z = 0.0;
+  }
+
+  return cmd_vel;
+}
  
  void TemplateController::setPlan(const nav_msgs::msg::Path & path)
  {
