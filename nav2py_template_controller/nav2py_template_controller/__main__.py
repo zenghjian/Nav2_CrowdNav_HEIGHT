@@ -67,7 +67,6 @@ class nav2py_template_controller(nav2py.interfaces.nav2py_costmap_controller):
         Process path data from C++ controller
         """
         try:
-            self.logger.info(f"Received path data, type: {type(path_)}")
             
             if isinstance(path_, list) and len(path_) > 0:
                 data_str = path_[0]
@@ -75,19 +74,7 @@ class nav2py_template_controller(nav2py.interfaces.nav2py_costmap_controller):
                     data_str = data_str.decode()
                 
                 self.path = yaml.safe_load(data_str)
-                self.logger.info(f"Path data decoded, contains {len(self.path['poses'])} poses")
-                
-                # Save first few poses for debugging
-                if len(self.path['poses']) > 0:
-                    first_pose = self.path['poses'][0]['pose']
-                    self.logger.info(f"First pose: x={first_pose['position']['x']:.2f}, y={first_pose['position']['y']:.2f}")
-            else:
-                if isinstance(path_, bytes):
-                    self.path = yaml.safe_load(path_.decode())
-                    self.logger.info(f"Path data decoded from bytes")
-                else:
-                    self.logger.error(f"Unexpected path data type: {type(path_)}")
-            
+        
         except Exception as e:
             import traceback
             self.logger.error(f"Error processing path data: {e}")

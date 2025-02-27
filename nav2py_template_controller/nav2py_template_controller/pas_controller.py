@@ -372,7 +372,7 @@ class PaSController:
                 else:  # non-holonomic
                     # Clip action (changes in v and w)
                     clipped_v_change = np.clip(raw_action[0], -0.1, 0.1)
-                    clipped_w_change = np.clip(raw_action[1], -0.25, 0.25)
+                    clipped_w_change = np.clip(raw_action[1], -0.1, 0.1)
                     
                     # If need to track current v and w
                     if not hasattr(self, 'current_v'):
