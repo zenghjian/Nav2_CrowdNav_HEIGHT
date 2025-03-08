@@ -1,5 +1,5 @@
 [project]
-name = "nav2py_template_controller"
+name = "nav2py_pas_crowdnav_controller"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"

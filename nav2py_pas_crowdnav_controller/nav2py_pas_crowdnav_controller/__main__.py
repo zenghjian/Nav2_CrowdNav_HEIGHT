@@ -11,14 +11,14 @@ import math
 from .pas_controller import PaSController, set_log_level
 from .PaS_CrowdNav.crowd_nav.configs.config import Config
 
-class nav2py_template_controller(nav2py.interfaces.nav2py_costmap_controller):
+class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._register_callback('path', self._path_callback)
         self._register_callback('costmap_pose', self._costmap_pose_callback)
         
-        self.logger = get_logger('nav2py_template_controller')
+        self.logger = get_logger('nav2py_pas_crowdnav_controller')
         
         set_log_level(self.logger, 'info')
         
@@ -64,7 +64,7 @@ class nav2py_template_controller(nav2py.interfaces.nav2py_costmap_controller):
             self.pas_controller = None
             self.logger.warn("Using simple obstacle avoidance fallback")
         
-        self.logger.info("nav2py_template_controller initialized")
+        self.logger.info("nav2py_pas_crowdnav_controller initialized")
         
     def _path_callback(self, path_):
         """
@@ -235,4 +235,4 @@ class nav2py_template_controller(nav2py.interfaces.nav2py_costmap_controller):
     
         
 if __name__ == "__main__":
-    nav2py.main(nav2py_template_controller)
+    nav2py.main(nav2py_pas_crowdnav_controller)

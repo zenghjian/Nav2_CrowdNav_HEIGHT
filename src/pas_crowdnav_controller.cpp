@@ -12,7 +12,7 @@
  
  #include "nav2_core/exceptions.hpp"
  #include "nav2_util/node_utils.hpp"
- #include "nav2py_template_controller/template_controller.hpp"
+ #include "nav2py_pas_crowdnav_controller/pas_crowdnav_controller.hpp"
  #include "nav2_util/geometry_utils.hpp"
  #include "ament_index_cpp/get_package_share_directory.hpp"
  
@@ -23,10 +23,10 @@
  using nav2_util::declare_parameter_if_not_declared;
  using nav2_util::geometry_utils::euclidean_distance;
  
- namespace nav2py_template_controller
+ namespace nav2py_pas_crowdnav_controller
  {
  
- void TemplateController::configure(
+ void PasCrowdNavController::configure(
    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
    std::string name, const std::shared_ptr<tf2_ros::Buffer> tf,
    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
@@ -49,7 +49,7 @@
    transform_tolerance_ = rclcpp::Duration::from_seconds(transform_tolerance);
  
    // Initialize nav2py
-   std::string nav2py_script = ament_index_cpp::get_package_share_directory("nav2py_template_controller") + "/../../lib/nav2py_template_controller/nav2py_run" ;
+   std::string nav2py_script = ament_index_cpp::get_package_share_directory("nav2py_pas_crowdnav_controller") + "/../../lib/nav2py_pas_crowdnav_controller/nav2py_run" ;
    nav2py_bootstrap(nav2py_script +
      " --host 127.0.0.1" +
      " --port 0");
@@ -59,11 +59,11 @@
    
    RCLCPP_INFO(
      logger_,
-     "Configured controller: %s of type nav2py_template_controller::TemplateController",
+     "Configured controller: %s of type nav2py_pas_crowdnav_controller::PasCrowdNavController",
      plugin_name_.c_str());
  }
  
- void TemplateController::sendCostmapAndPose(
+ void PasCrowdNavController::sendCostmapAndPose(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & velocity)
 {
@@ -170,41 +170,41 @@
   RCLCPP_INFO(logger_, "%s", frame_delimiter.c_str());
 }
  
- void TemplateController::cleanup()
+ void PasCrowdNavController::cleanup()
  {
    RCLCPP_INFO(
      logger_,
-     "Cleaning up controller: %s of type template_controller::TemplateController",
+     "Cleaning up controller: %s of type nav2py_pas_crowdnav_controller::PasCrowdNavController",
      plugin_name_.c_str());
    nav2py_cleanup();
    global_pub_.reset();
  }
  
- void TemplateController::activate()
+ void PasCrowdNavController::activate()
  {
    RCLCPP_INFO(
      logger_,
-     "Activating controller: %s of type template_controller::TemplateController\"  %s",
+     "Activating controller: %s of type nav2py_pas_crowdnav_controller::PasCrowdNavController\"  %s",
      plugin_name_.c_str(),plugin_name_.c_str());
    global_pub_->on_activate();
  }
  
- void TemplateController::deactivate()
+ void PasCrowdNavController::deactivate()
  {
    RCLCPP_INFO(
      logger_,
-     "Dectivating controller: %s of type template_controller::TemplateController\"  %s",
+     "Dectivating controller: %s of type nav2py_pas_crowdnav_controller::PasCrowdNavController\"  %s",
      plugin_name_.c_str(),plugin_name_.c_str());
    global_pub_->on_deactivate();
  }
  
- void TemplateController::setSpeedLimit(const double& speed_limit, const bool& percentage)
+ void PasCrowdNavController::setSpeedLimit(const double& speed_limit, const bool& percentage)
  {
    (void) speed_limit;
    (void) percentage;
  }
  
- geometry_msgs::msg::TwistStamped TemplateController::computeVelocityCommands(
+ geometry_msgs::msg::TwistStamped PasCrowdNavController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & velocity,
   nav2_core::GoalChecker * goal_checker)
@@ -257,14 +257,14 @@
   return cmd_vel;
 }
  
- void TemplateController::setPlan(const nav_msgs::msg::Path & path)
+ void PasCrowdNavController::setPlan(const nav_msgs::msg::Path & path)
  {
    global_pub_->publish(path);
    global_plan_ = path;
  }
  
  nav_msgs::msg::Path
- TemplateController::transformGlobalPlan(
+ PasCrowdNavController::transformGlobalPlan(
    const geometry_msgs::msg::PoseStamped & pose)
  {
    // Original mplementation taken fron nav2_dwb_controller
@@ -336,7 +336,7 @@
    return transformed_plan;
  }
  
- bool TemplateController::transformPose(
+ bool PasCrowdNavController::transformPose(
    const std::shared_ptr<tf2_ros::Buffer> tf,
    const std::string frame,
    const geometry_msgs::msg::PoseStamped & in_pose,
@@ -394,7 +394,7 @@
    return false;
  }
  
- }  // namespace nav2py_template_controller
+ }  // namespace nav2py_pas_crowdnav_controller
  
  // Register this controller as a nav2_core plugin
- PLUGINLIB_EXPORT_CLASS(nav2py_template_controller::TemplateController, nav2_core::Controller)
+ PLUGINLIB_EXPORT_CLASS(nav2py_pas_crowdnav_controller::PasCrowdNavController, nav2_core::Controller)
