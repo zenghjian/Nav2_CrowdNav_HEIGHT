@@ -2,6 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2py_pas_crowdnav_controller</name>
+  <version>0.0.0</version>
   <description>PaS CrowdNav navigation controller plugin for ROS2 Navigation stack</description>
   <maintainer email="dev@voshch.dev">voshch</maintainer>
   <license>MIT</license>
