@@ -7,7 +7,7 @@ from rclpy.logging import get_logger
 import os
 import torch
 import math
-
+import ament_index_python
 from .pas_controller import PaSController, set_log_level
 from PaS_CrowdNav.crowd_nav.configs.config import Config
 
@@ -31,9 +31,38 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
             
             config = Config()
 
-            # for simplicity, we use abs path here
-            vae_path = "/home/zeng/nav2_ws/src/Nav2_PaS_CrowdNav/nav2py_pas_crowdnav_controller/nav2py_pas_crowdnav_controller/vae.pth"
-            policy_path = "/home/zeng/nav2_ws/src/Nav2_PaS_CrowdNav/nav2py_pas_crowdnav_controller/nav2py_pas_crowdnav_controller/policy.pt"
+            # Find model files using ament resource paths
+            try:
+                # First try to find models in the installed share directory
+                package_share_dir = ament_index_python.get_package_share_directory('nav2py_pas_crowdnav_controller')
+                model_dir = os.path.join(package_share_dir, 'models')
+                
+                vae_path = os.path.join(model_dir, 'vae.pth')
+                policy_path = os.path.join(model_dir, 'policy.pt')
+                
+                self.logger.info(f"Looking for models in: {model_dir}")
+                
+                # Check if model files exist in the installed location
+                if not os.path.exists(vae_path) or not os.path.exists(policy_path):
+                    # Fallback to current directory (for development)
+                    current_dir = os.path.dirname(os.path.abspath(__file__))
+                    vae_path = os.path.join(current_dir, 'vae.pth')
+                    policy_path = os.path.join(current_dir, 'policy.pt')
+                    
+                    self.logger.info(f"Models not found in share directory, looking in: {current_dir}")
+                    
+                    # If still not found, check parent directory for models folder
+                    if not os.path.exists(vae_path) or not os.path.exists(policy_path):
+                        parent_dir = os.path.dirname(current_dir)
+                        vae_path = os.path.join(parent_dir, 'models', 'vae.pth')
+                        policy_path = os.path.join(parent_dir, 'models', 'policy.pt')
+                        
+                        self.logger.info(f"Models not found in package dir, looking in: {os.path.join(parent_dir, 'models')}")
+            
+            except Exception as e:
+                self.logger.warn(f"Error finding model paths: {e}")
+                vae_path = None
+                policy_path = None
             
             # Check if model files exist
             if not os.path.exists(vae_path) or not os.path.exists(policy_path):
@@ -41,6 +70,8 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
                 self.logger.warn("Using simple obstacle avoidance instead")
                 vae_path = None
                 policy_path = None
+            else:
+                self.logger.info(f"Found model files at {vae_path} and {policy_path}")
             
             device = "cuda" if torch.cuda.is_available() else "cpu"
             self.logger.info(f"Using device: {device}")

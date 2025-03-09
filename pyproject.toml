@@ -11,5 +11,7 @@ dependencies = [
     "numpy",
     "matplotlib",
     "scipy",
-    "Cython"
+    "Cython",
+    "ament_index_python",
+    "gym"
 ]

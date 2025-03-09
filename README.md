@@ -17,6 +17,3 @@ Install the dependencies using the following command in the root directory of th
 pip install -e .
 ```
 
-### **3. Model Path**
-
-Due to conflict of ros2 environment, for simplicity, please put absolute path of the model in [here](https://github.com/zenghjian/Nav2_PaS_CrowdNav/blob/humble/nav2py_pas_crowdnav_controller/nav2py_pas_crowdnav_controller/__main__.py#L35).
