@@ -7,7 +7,7 @@ This branch provide the implementation of the Pas_CrowdNav algorithm in the Nav2
 
 ### **1. Clone the Repository**
 ```bash
-git clone git@github.com:yejimun/PaS_CrowdNav.git /nav2py_pas_crowdnav_controller/nav2py_pas_crowdnav_controller
+git clone git@github.com:zenghjian/PaS_CrowdNav.git /nav2py_pas_crowdnav_controller/nav2py_pas_crowdnav_controller
 ```
 
 ### **2. Install Dependencies**
@@ -15,13 +15,8 @@ git clone git@github.com:yejimun/PaS_CrowdNav.git /nav2py_pas_crowdnav_controlle
 Install the dependencies using the following command in the root directory of the planner repository:
 ```bash
 pip install -e .
-pip install -r requirements.txt
 ```
-Install [Python-RVO2](https://github.com/sybrenstuvel/Python-RVO2) library
 
-### **3. Training**
+### **3. Model Path**
 
-Follow the instructions from the original repository to train the model.
-You should obtain both VAE and RNN models after training.
-
-We provide the trained models following the original paper settings.
+Due to conflict of ros2 environment, for simplicity, please put absolute path of the model in [here](https://github.com/zenghjian/Nav2_PaS_CrowdNav/blob/humble/nav2py_pas_crowdnav_controller/nav2py_pas_crowdnav_controller/__main__.py#L35).

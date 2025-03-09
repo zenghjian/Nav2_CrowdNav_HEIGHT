@@ -9,7 +9,7 @@ import torch
 import math
 
 from .pas_controller import PaSController, set_log_level
-from .PaS_CrowdNav.crowd_nav.configs.config import Config
+from PaS_CrowdNav.crowd_nav.configs.config import Config
 
 class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller):
 
@@ -30,10 +30,10 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
             self.logger.info("Initializing PaSController...")
             
             config = Config()
-            
-            # Set model paths 
-            vae_path = "vae.pth"
-            policy_path = "policy.pt"
+
+            # for simplicity, we use abs path here
+            vae_path = "/home/zeng/nav2_ws/src/Nav2_PaS_CrowdNav/nav2py_pas_crowdnav_controller/nav2py_pas_crowdnav_controller/vae.pth"
+            policy_path = "/home/zeng/nav2_ws/src/Nav2_PaS_CrowdNav/nav2py_pas_crowdnav_controller/nav2py_pas_crowdnav_controller/policy.pt"
             
             # Check if model files exist
             if not os.path.exists(vae_path) or not os.path.exists(policy_path):

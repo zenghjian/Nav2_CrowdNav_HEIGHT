@@ -3,9 +3,9 @@ import numpy as np
 import os
 from collections import deque
 import math
-from .PaS_CrowdNav.crowd_nav.configs.config import Config
-from .PaS_CrowdNav.rl.model import Policy
-from .PaS_CrowdNav.rl.pas_rnn_model import Label_VAE
+from PaS_CrowdNav.crowd_nav.configs.config import Config
+from PaS_CrowdNav.rl.model import Policy
+from PaS_CrowdNav.rl.pas_rnn_model import Label_VAE
 from rclpy.logging import get_logger
 
 def set_log_level(logger, level='info'):
@@ -74,7 +74,7 @@ class PaSController:
                 self.model_loaded = True
                 self.logger.info(f"Models loaded successfully from {vae_path} and {policy_path}")
             except Exception as e:
-                self.logger.error(f"Failed to load model: {e}")
+                self.logger.warn(f"Failed to load model: {e}")
                 self.model_loaded = False
         else:
             # If no model or loading failed, use simple obstacle avoidance
@@ -131,7 +131,8 @@ class PaSController:
             action_space=ActionSpace(self.config),
             config=self.config,
             base_kwargs=args,
-            base=self.config.robot.policy
+            base=self.config.robot.policy,
+            vae_path=vae_path
         )
         
         # Load model weights
