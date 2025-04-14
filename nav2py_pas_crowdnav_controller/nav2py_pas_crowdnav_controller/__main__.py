@@ -7,9 +7,9 @@ from rclpy.logging import get_logger
 import os
 import torch
 import math
-import ament_index_python
 from .pas_controller import PaSController, set_log_level
 from PaS_CrowdNav.crowd_nav.configs.config import Config
+
 
 class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller):
 
@@ -17,53 +17,53 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
         super().__init__(*args, **kwargs)
         self._register_callback('path', self._path_callback)
         self._register_callback('costmap_pose', self._costmap_pose_callback)
-        
+
         self.logger = get_logger('nav2py_pas_crowdnav_controller')
-        
+
         set_log_level(self.logger, 'info')
-        
+
         self.path = None  # Store the latest path
         self.frame_count = 0
-        
+
         # Initialize PaSController
         try:
             self.logger.info("Initializing PaSController...")
-            
+
             config = Config()
 
             # Find model files using ament resource paths
             try:
                 # First try to find models in the installed share directory
-                package_share_dir = ament_index_python.get_package_share_directory('nav2py_pas_crowdnav_controller')
+                package_share_dir = os.path.dirname(__file__)
                 model_dir = os.path.join(package_share_dir, 'models')
-                
+
                 vae_path = os.path.join(model_dir, 'vae.pth')
                 policy_path = os.path.join(model_dir, 'policy.pt')
-                
+
                 self.logger.info(f"Looking for models in: {model_dir}")
-                
+
                 # Check if model files exist in the installed location
                 if not os.path.exists(vae_path) or not os.path.exists(policy_path):
                     # Fallback to current directory (for development)
                     current_dir = os.path.dirname(os.path.abspath(__file__))
                     vae_path = os.path.join(current_dir, 'vae.pth')
                     policy_path = os.path.join(current_dir, 'policy.pt')
-                    
+
                     self.logger.info(f"Models not found in share directory, looking in: {current_dir}")
-                    
+
                     # If still not found, check parent directory for models folder
                     if not os.path.exists(vae_path) or not os.path.exists(policy_path):
                         parent_dir = os.path.dirname(current_dir)
                         vae_path = os.path.join(parent_dir, 'models', 'vae.pth')
                         policy_path = os.path.join(parent_dir, 'models', 'policy.pt')
-                        
+
                         self.logger.info(f"Models not found in package dir, looking in: {os.path.join(parent_dir, 'models')}")
-            
+
             except Exception as e:
                 self.logger.warn(f"Error finding model paths: {e}")
                 vae_path = None
                 policy_path = None
-            
+
             # Check if model files exist
             if not os.path.exists(vae_path) or not os.path.exists(policy_path):
                 self.logger.warn(f"Model files not found at {vae_path} or {policy_path}")
@@ -72,10 +72,10 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
                 policy_path = None
             else:
                 self.logger.info(f"Found model files at {vae_path} and {policy_path}")
-            
+
             device = "cuda" if torch.cuda.is_available() else "cpu"
             self.logger.info(f"Using device: {device}")
-            
+
             # Create PaSController instance
             self.pas_controller = PaSController(
                 vae_path=vae_path,
@@ -83,20 +83,20 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
                 device=device,
                 config=config
             )
-            
+
             self.logger.info("PaSController initialized successfully")
-            
+
         except Exception as e:
             import traceback
             self.logger.error(f"Error initializing PaSController: {e}")
             self.logger.error(traceback.format_exc())
-            
+
             # Create a backup simple controller if PaSController initialization fails
             self.pas_controller = None
             self.logger.warn("Using simple obstacle avoidance fallback")
-        
+
         self.logger.info("nav2py_pas_crowdnav_controller initialized")
-        
+
     def _path_callback(self, path_):
         """
         Process path data from C++ controller
@@ -107,7 +107,7 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
                 data_str = path_[0]
                 if isinstance(data_str, bytes):
                     data_str = data_str.decode()
-                
+
                 self.path = yaml.safe_load(data_str)
 
         except Exception as e:
@@ -121,17 +121,17 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
         """
         try:
             self.frame_count += 1
-            
+
             frame_delimiter = "=" * 80
             self.logger.info(f"\n{frame_delimiter}")
             self.logger.info(f"===== PROCESSING FRAME {self.frame_count} =====")
             self.logger.info(f"{frame_delimiter}")
-            
+
             if isinstance(costmap_pose_data, list) and len(costmap_pose_data) > 0:
                 data_str = costmap_pose_data[0]
                 if isinstance(data_str, bytes):
                     data_str = data_str.decode()
-                
+
                 data = yaml.safe_load(data_str)
                 self.logger.info(f"Costmap and pose data decoded successfully")
             else:
@@ -141,7 +141,7 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
                 else:
                     self.logger.error(f"Unexpected costmap_pose data type: {type(costmap_pose_data)}")
                     return
-            
+
             # Extract costmap info
             costmap_info = data.get('costmap_info', {})
             width = costmap_info.get('width', 0)
@@ -149,35 +149,35 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
             resolution = costmap_info.get('resolution', 0.0)
             origin_x = costmap_info.get('origin_x', 0.0)
             origin_y = costmap_info.get('origin_y', 0.0)
-            
+
             self.logger.info(f"Costmap info: {width}x{height}, resolution: {resolution}, origin: ({origin_x}, {origin_y})")
-            
+
             # Extract costmap data
             costmap_data = data.get('costmap_data', [])
             self.logger.info(f"Costmap data length: {len(costmap_data)}")
-            
+
             # Extract robot pose
             robot_pose = data.get('robot_pose', {})
-            pose = data 
+            pose = data
             position = robot_pose.get('position', {})
             self.logger.info(f"Robot pose: x={position.get('x', 0.0):.2f}, y={position.get('y', 0.0):.2f}")
-            
+
             # Extract velocity if available
             velocity = data.get('robot_velocity', {})
             current_velocity = {
                 'linear': velocity.get('linear', {}).get('x', 0.0),
                 'angular': velocity.get('angular', {}).get('z', 0.0)
             }
-            
+
             self.logger.info(f"Robot velocity: linear={current_velocity['linear']:.2f}, angular={current_velocity['angular']:.2f}")
-            
+
             goal_pose = None
             if self.path and 'poses' in self.path and len(self.path['poses']) > 0:
-                
+
                 # # log all the poses
                 # for i, pose in enumerate(self.path['poses']):
                 #     self.logger.info(f"Pose {i}: x={pose['pose']['position']['x']:.2f}, y={pose['pose']['position']['y']:.2f}")
-                
+
                 last_pose = self.path['poses'][-1]['pose']
                 goal_pose = {
                     'x': last_pose['position']['x'],
@@ -186,19 +186,19 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
                 self.logger.info(f"Goal pose (from path end): x={goal_pose['x']:.2f}, y={goal_pose['y']:.2f}")
             else:
                 self.logger.warn("No path available, cannot determine goal position")
-            
+
             # Process costmap data with PaSController
             if width > 0 and height > 0 and len(costmap_data) == width * height:
                 # Convert to numpy array for processing
                 costmap_array = np.array(costmap_data, dtype=np.uint8).reshape(height, width)
-                
+
                 # Normalize costmap values to range [0, 1] for the controller
                 normalized_costmap = np.zeros((height, width), dtype=np.float32)
-                
+
                 # Define thresholds (adjust as needed based on nav2 costmap interpretation)
                 free_threshold = 0
                 lethal_threshold = 254
-                
+
                 # Normalize the costmap
                 for i in range(height):
                     for j in range(width):
@@ -210,21 +210,21 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
                         else:
                             # Linear mapping from (free_threshold, lethal_threshold) to (0, 1)
                             normalized_costmap[i, j] = cost / 255.0
-                
+
                 # Determine control commands
                 if self.pas_controller is not None:
                     try:
                         # Use PaSController to determine velocity commands
                         linear_x, angular_z = self.pas_controller.process_costmap(
-                            normalized_costmap, 
-                            pose, 
-                            resolution, 
-                            origin_x, 
+                            normalized_costmap,
+                            pose,
+                            resolution,
+                            origin_x,
                             origin_y,
                             current_velocity,
                             goal_pose
                         )
-                        
+
                         # Check if PaSController returned valid commands
                         if linear_x is None or angular_z is None:
                             # Fallback to simple obstacle avoidance
@@ -242,7 +242,7 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
                     # set the linear_x and angular_z to 0.0
                     linear_x, angular_z = 0.0, 0.0
                     self.logger.info(f"Simple obstacle avoidance: linear_x={linear_x:.2f}, angular_z={angular_z:.2f}")
-                
+
                 # Send velocity commands back to the C++ controller
                 self._send_cmd_vel(linear_x, angular_z)
                 self.logger.info(f"Sent cmd_vel: linear_x={linear_x:.2f}, angular_z={angular_z:.2f}")
@@ -251,19 +251,19 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
                 # Send a safe stop command
                 self._send_cmd_vel(0.0, 0.0)
                 self.logger.info("Sent zero velocity command due to invalid costmap")
-                
+
             # Add closing delimiter
             self.logger.info(f"\n{frame_delimiter}")
             self.logger.info(f"===== FRAME {self.frame_count} COMPLETED =====")
             self.logger.info(f"{frame_delimiter}")
-                
+
         except Exception as e:
             import traceback
             self.logger.error(f"Error processing costmap and pose data: {e}")
             self.logger.error(traceback.format_exc())
             # Send a safe stop command in case of error
             self._send_cmd_vel(0.0, 0.0)
-    
-        
+
+
 if __name__ == "__main__":
     nav2py.main(nav2py_pas_crowdnav_controller)
