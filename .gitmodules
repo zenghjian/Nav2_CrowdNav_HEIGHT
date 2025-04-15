@@ -1,3 +1,4 @@
 [submodule "nav2py_pas_crowdnav_controller/nav2py_pas_crowdnav_controller/PaS_CrowdNav"]
 	path = nav2py_pas_crowdnav_controller/nav2py_pas_crowdnav_controller/PaS_CrowdNav
 	url = https://github.com/zenghjian/PaS_CrowdNav.git
+	branch = main
