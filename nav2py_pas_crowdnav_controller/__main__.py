@@ -8,7 +8,7 @@ import os
 import torch
 import math
 from .pas_controller import PaSController, set_log_level
-from PaS_CrowdNav.crowd_nav.configs.config import Config
+from .PaS_CrowdNav.crowd_nav.configs.config import Config
 
 
 class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller):

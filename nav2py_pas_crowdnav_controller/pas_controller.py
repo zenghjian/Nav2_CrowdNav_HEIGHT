@@ -3,9 +3,9 @@ import numpy as np
 import os
 from collections import deque
 import math
-from PaS_CrowdNav.crowd_nav.configs.config import Config
-from PaS_CrowdNav.rl.model import Policy
-from PaS_CrowdNav.rl.pas_rnn_model import Label_VAE
+from .PaS_CrowdNav.crowd_nav.configs.config import Config
+from .PaS_CrowdNav.rl.model import Policy
+from .PaS_CrowdNav.rl.pas_rnn_model import Label_VAE
 from rclpy.logging import get_logger
 
 def set_log_level(logger, level='info'):

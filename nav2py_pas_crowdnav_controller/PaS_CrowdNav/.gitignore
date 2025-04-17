@@ -1,0 +1,9 @@
+*.pyc 
+*__pycache__*
+build/
+crowdenv/
+data/
+**egg-info/
+Python-RVO2/
+Turtlebot_VAEdata/
+VAEdata_CircleFOV30/
