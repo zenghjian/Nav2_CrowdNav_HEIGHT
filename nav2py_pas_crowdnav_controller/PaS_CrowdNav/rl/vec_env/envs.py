@@ -3,11 +3,11 @@ import numpy as np
 import torch
 from gym.spaces.box import Box
 
-from rl.vec_env.monitor import Monitor
-from rl.vec_env.vec_env import VecEnvWrapper
-from rl.vec_env.dummy_vec_env import DummyVecEnv
-from rl.vec_env.shmem_vec_env import ShmemVecEnv
-from rl.vec_env.vec_normalize import \
+from .monitor import Monitor
+from .core_env import VecEnvWrapper
+from .dummy_vec_env import DummyVecEnv
+from .shmem_vec_env import ShmemVecEnv
+from .vec_normalize import \
     VecNormalize as VecNormalize_
 
 def make_env(env_id, seed, rank, allow_early_resets, envConfig=None, envNum=1, ax=None,  phase=None):

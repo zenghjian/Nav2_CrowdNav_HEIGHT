@@ -1,6 +1,6 @@
 import numpy as np
-from rl.vec_env.vec_env import VecEnv
-from rl.vec_env.util import copy_obs_dict, dict_to_obs, obs_space_info
+from .core_env import VecEnv
+from .util import copy_obs_dict, dict_to_obs, obs_space_info
 
 class DummyVecEnv(VecEnv):
     """

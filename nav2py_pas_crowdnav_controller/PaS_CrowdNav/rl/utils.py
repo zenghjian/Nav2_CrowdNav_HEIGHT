@@ -2,7 +2,7 @@ import glob
 import os
 import torch.nn as nn
 
-from rl.vec_env.envs import VecNormalize
+from .vec_env.envs import VecNormalize
 
 
 # Get a render function

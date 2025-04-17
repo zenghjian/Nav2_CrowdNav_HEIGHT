@@ -2,7 +2,7 @@ import contextlib
 import os
 from abc import ABC, abstractmethod
 
-from rl.vec_env.tile_images import tile_images
+from .tile_images import tile_images
 
 
 class AlreadySteppingError(Exception):

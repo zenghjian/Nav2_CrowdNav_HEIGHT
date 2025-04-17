@@ -4,11 +4,11 @@ An interface for asynchronous vectorized environments.
 
 import multiprocessing as mp
 import numpy as np
-from rl.vec_env.vec_env import VecEnv, CloudpickleWrapper, clear_mpi_env_vars
+from .core_env import VecEnv, CloudpickleWrapper, clear_mpi_env_vars
 import ctypes
-from rl.vec_env import logger
+from . import logger
 
-from rl.vec_env.util import dict_to_obs, obs_space_info, obs_to_dict
+from .util import dict_to_obs, obs_space_info, obs_to_dict
 
 _NP_TO_CT = {np.float32: ctypes.c_float,
              np.int32: ctypes.c_int32,

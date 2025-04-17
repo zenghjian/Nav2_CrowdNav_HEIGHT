@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from vae_pretrain import KL_loss, MSE
+from ..vae_pretrain import KL_loss, MSE
 
 class PPO():
     def __init__(self,

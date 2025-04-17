@@ -1,6 +1,6 @@
 import numpy as np
 
-from rl.vec_env.vec_env import VecEnvWrapper
+from .core_env import VecEnvWrapper
 
 
 class VecNormalize(VecEnvWrapper):

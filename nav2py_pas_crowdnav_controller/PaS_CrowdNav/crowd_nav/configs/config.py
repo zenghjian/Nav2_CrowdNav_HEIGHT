@@ -8,7 +8,7 @@ class Config(object):
     env.time_step = 0.25
     env.val_size = 100
     env.test_size = 500 
-    env.randomize_attributes = True # False for turtlebot experiment
+    env.randomize_attributes = False # False for turtlebot experiment
 
     reward = BaseConfig()
     reward.success_reward = 10 
@@ -23,13 +23,13 @@ class Config(object):
     sim.test_sim = "circle_crossing" 
     sim.square_width = 10
     sim.circle_radius = 4
-    sim.human_num = 6  # 4 for turtlebot experiment
+    sim.human_num = 4  # 4 for turtlebot experiment
 
     humans = BaseConfig()
     humans.visible = True
     humans.policy =  "orca"
     humans.radius = 0.3 
-    humans.v_pref = 2 # 0.5 for the turtlebot experiment
+    humans.v_pref = 0.5 # 0.5 for the turtlebot experiment
     humans.sensor = "coordinates"
     # FOV = this values * PI
     humans.FOV = 2.
@@ -57,7 +57,7 @@ class Config(object):
     # srnn for now
     robot.policy = 'pas_rnn'  #'orca' 
     robot.radius = 0.3
-    robot.v_pref = 2 # 0.5 for the turtlebot experiment
+    robot.v_pref = 0.5 # 0.5 for the turtlebot experiment
     robot.sensor = "coordinates"
     # FOV = this values * PI
     robot.FOV = 2.
@@ -73,12 +73,12 @@ class Config(object):
 
     action_space = BaseConfig()
     # holonomic or unicycle
-    action_space.kinematics = "holonomic"  # unicycle for the turtlebot experiment
+    action_space.kinematics = "unicycle"  # unicycle for the turtlebot experiment
 
     # config for ORCA
     orca = BaseConfig()
     orca.neighbor_dist = 10
-    orca.safety_space = 0.15 # 0.25 for the turtlebot experiment
+    orca.safety_space = 0.25 # 0.25 for the turtlebot experiment
     orca.time_horizon = 5
     orca.time_horizon_obst = 5
 
@@ -92,4 +92,3 @@ class Config(object):
     pas.encoder_type = 'vae'  #'vae' or 'cnn'
     pas.PaS_coef = 1. 
     pas.seq_flag = True
-
