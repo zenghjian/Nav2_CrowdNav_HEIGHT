@@ -68,7 +68,7 @@ install(DIRECTORY include/
 
 install(
   DIRECTORY models
-  DESTINATION share/${PROJECT_NAME}/
+  DESTINATION venv/share/
 )
 
 if(BUILD_TESTING)
