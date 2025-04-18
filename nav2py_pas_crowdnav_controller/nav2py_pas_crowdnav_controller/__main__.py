@@ -8,7 +8,7 @@ import os
 import torch
 import math
 from .pas_controller import PaSController, set_log_level
-from .PaS_CrowdNav.crowd_nav.configs.config import Config
+from PaS_CrowdNav.crowd_nav.configs.config import Config
 
 
 class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller):
@@ -36,7 +36,7 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
                 # First try to find models in the installed share directory
                 package_share_dir = os.path.dirname(__file__)
                 model_dir = os.path.join(package_share_dir, 'models')
-            
+
                 vae_path = os.path.join(model_dir, 'vae.pth')
                 policy_path = os.path.join(model_dir, 'policy.pt')
 
