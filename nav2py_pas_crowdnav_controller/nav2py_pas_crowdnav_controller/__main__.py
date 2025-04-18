@@ -1,9 +1,8 @@
+import logging
 import yaml
 import nav2py
 import nav2py.interfaces
 import numpy as np
-import rclpy
-from rclpy.logging import get_logger
 import os
 import torch
 import math
@@ -18,7 +17,7 @@ class nav2py_pas_crowdnav_controller(nav2py.interfaces.nav2py_costmap_controller
         self._register_callback('path', self._path_callback)
         self._register_callback('costmap_pose', self._costmap_pose_callback)
 
-        self.logger = get_logger('nav2py_pas_crowdnav_controller')
+        self.logger = logging.getLogger('nav2py_pas_crowdnav_controller')
 
         set_log_level(self.logger, 'info')
 

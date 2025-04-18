@@ -3,12 +3,12 @@ name = "nav2py_pas_crowdnav_controller"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = "==3.10.*"
+requires-python = "==3.8.*"
 dependencies = [
     "pyyaml",
     "torch",
     "torchvision",
-    "numpy",
+    "numpy==1.23.*",
     "matplotlib",
     "scipy",
     "Cython",

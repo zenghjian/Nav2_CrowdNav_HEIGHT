@@ -6,10 +6,10 @@ import math
 from PaS_CrowdNav.crowd_nav.configs.config import Config
 from PaS_CrowdNav.rl.model import Policy
 from PaS_CrowdNav.rl.pas_rnn_model import Label_VAE
-from rclpy.logging import get_logger
+import logging
 
 
-def set_log_level(logger, level='info'):
+def set_log_level(logger: logging.Logger, level='info'):
     """
     Set the logging level for a ROS2 logger
 
@@ -17,22 +17,21 @@ def set_log_level(logger, level='info'):
         logger: The ROS2 logger instance
         level: The log level ('debug', 'info', 'warn', 'error', 'fatal')
     """
-    from rclpy.logging import LoggingSeverity
 
     levels = {
-        'debug': LoggingSeverity.DEBUG,
-        'info': LoggingSeverity.INFO,
-        'warn': LoggingSeverity.WARN,
-        'error': LoggingSeverity.ERROR,
-        'fatal': LoggingSeverity.FATAL
+        'debug': logging.DEBUG,
+        'info': logging.INFO,
+        'warn': logging.WARN,
+        'error': logging.ERROR,
+        'fatal': logging.FATAL
     }
 
     if level.lower() in levels:
-        logger.set_level(levels[level.lower()])
+        logger.setLevel(levels[level.lower()])
         logger.info(f"Log level set to {level.upper()}")
     else:
         logger.warn(f"Unknown log level '{level}'. Using INFO level.")
-        logger.set_level(LoggingSeverity.INFO)
+        logger.setLevel(logging.INFO)
 
 
 class PaSController:
@@ -50,7 +49,7 @@ class PaSController:
             device: Running device ('cpu' or 'cuda')
             config: Configuration object, if None, use default configuration
         """
-        self.logger = get_logger('pas_controller')
+        self.logger = logging.getLogger('pas_controller')
 
         set_log_level(self.logger, 'info')
 
