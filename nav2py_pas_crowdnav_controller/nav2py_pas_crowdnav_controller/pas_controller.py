@@ -1,3 +1,4 @@
+import sys
 import torch
 import numpy as np
 import os
@@ -50,6 +51,7 @@ class PaSController:
             config: Configuration object, if None, use default configuration
         """
         self.logger = logging.getLogger('pas_controller')
+        self.logger.addHandler(logging.StreamHandler(sys.stderr))
 
         set_log_level(self.logger, 'info')
 
