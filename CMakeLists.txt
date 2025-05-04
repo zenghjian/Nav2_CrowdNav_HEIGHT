@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(nav2py_pas_crowdnav_controller)
+project(nav2py_crowdnav_height_controller)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -27,7 +27,7 @@ find_package(ament_cmake_venv REQUIRED)
 find_package(ament_cmake_venv_uv REQUIRED)
 
 uv_venv(PROJECTFILE pyproject.toml)
-nav2py_package(nav2py_pas_crowdnav_controller)
+nav2py_package(nav2py_crowdnav_height_controller)
 
 include_directories(
   include
@@ -47,16 +47,16 @@ set(dependencies
   sensor_msgs   
 )
 
-add_library(nav2py_pas_crowdnav_controller SHARED
-        src/pas_crowdnav_controller.cpp)
+add_library(nav2py_crowdnav_height_controller SHARED
+        src/height_crowdnav_controller.cpp)
 
-target_compile_definitions(nav2py_pas_crowdnav_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_compile_definitions(nav2py_crowdnav_height_controller PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
-ament_target_dependencies(nav2py_pas_crowdnav_controller
+ament_target_dependencies(nav2py_crowdnav_height_controller
   ${dependencies}
 )
 
-install(TARGETS nav2py_pas_crowdnav_controller
+install(TARGETS nav2py_crowdnav_height_controller
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -80,9 +80,9 @@ endif()
 
 
 ament_export_include_directories(include)
-ament_export_libraries(nav2py_pas_crowdnav_controller)
+ament_export_libraries(nav2py_crowdnav_height_controller)
 ament_export_dependencies(${dependencies})
 
-pluginlib_export_plugin_description_file(nav2_core nav2py_pas_crowdnav_controller.xml)
+pluginlib_export_plugin_description_file(nav2_core nav2py_crowdnav_height_controller.xml)
 
 ament_package()

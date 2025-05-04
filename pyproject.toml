@@ -1,7 +1,7 @@
 [project]
-name = "nav2py_pas_crowdnav_controller"
+name = "nav2py_crowdnav_height_controller"
 version = "0.1.0"
-description = "Add your description here"
+description = "CrowdNav HEIGHT controller for ROS2 Navigation stack"
 readme = "README.md"
 requires-python = "==3.8.*"
 dependencies = [

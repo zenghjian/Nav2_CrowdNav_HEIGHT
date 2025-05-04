@@ -1,9 +1,0 @@
-<class_libraries>
-    <library path="nav2py_pas_crowdnav_controller">
-        <class type="nav2py_pas_crowdnav_controller::PasCrowdNavController" base_class_type="nav2_core::Controller">
-            <description>
-                PaS CrowdNav controller for navigation in dense human environments.
-            </description>
-        </class>
-    </library>
-</class_libraries>
